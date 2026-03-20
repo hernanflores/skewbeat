@@ -2,12 +2,18 @@ import SwiftUI
 
 // MARK: - ChannelRowView
 //
-// Layout (horizontal):
+// Layout (vertical stack):
 //
 //  ┌──────────┬──────────────────────────── step grid ────────────────────────────┬──── len ───┬──────┐
 //  │  Name    │  [■][□][■][□][■][□][■][□] ◄─── ScrollView(.horizontal) ──────►   │  [–] 16 [+]│  ⚙  │
 //  │  ~80pt   │  36×36pt buttons, 4pt gap, dark palette                           │    ~60pt   │ 36pt │
 //  └──────────┴────────────────────────────────────────────────────────────────────┴────────────┴──────┘
+//  ┌── Trig 80% ══════╸  Add 20% ══╸ ─────────────────────────────────── ▾ knobs ─┐
+//  │   compact sliders (always visible)                                   chevron  │
+//  └─────────────────────────────────────────────────────────────────────────────┘
+//  ┌────────────────── 8 × CCKnobView (collapsible, spring animated) ─────────────┐
+//  │  [CC1] [CC2] [CC3] [CC4] [CC5] [CC6] [CC7] [CC8]                            │
+//  └─────────────────────────────────────────────────────────────────────────────┘
 //
 // Button states:
 //   Inactive:        dark gray fill (#262626) + gray border
@@ -21,25 +27,51 @@ struct ChannelRowView: View {
     let channelIndex: Int
     let engine: SequencerEngine
 
-    @State private var flashingStep: Int? = nil
-    @State private var showControls: Bool = false
-    @State private var isEditingName: Bool = false
-    @State private var nameText: String = ""
+    @State private var flashingStep: Int?
+    @State private var showControls = false
+    @State private var isEditingName = false
+    @State private var nameText = ""
+
+    // Knob panel expanded state — persisted per channel across launches.
+    @AppStorage private var isKnobPanelExpanded: Bool
+
+    init(channelIndex: Int, engine: SequencerEngine) {
+        self.channelIndex = channelIndex
+        self.engine       = engine
+        let channelID = engine.sequencer.channels[channelIndex].id
+        _isKnobPanelExpanded = AppStorage(
+            wrappedValue: false,
+            "knobPanel_\(channelID.uuidString)"
+        )
+    }
 
     private var channel: Channel {
         engine.sequencer.channels[channelIndex]
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            nameLabel
-            stepGrid
-            lengthStepper
-            controlsButton
+        VStack(spacing: 0) {
+            // Main step row
+            HStack(spacing: 8) {
+                nameLabel
+                stepGrid
+                lengthStepper
+                controlsButton
+            }
+            .frame(height: 52)
+            .padding(.horizontal, 10)
+
+            // Prob controls + knob panel toggle (always visible)
+            probPanelHeader
+
+            // Knob panel (collapsible)
+            if isKnobPanelExpanded {
+                knobScrollView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .frame(height: 52)
-        .padding(.horizontal, 10)
         .background(Color(white: 0.08))
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isKnobPanelExpanded)
         // Subscribe to ephemeral fires for this channel via NotificationCenter.
         // Using NotificationCenter lets multiple ChannelRowViews each observe without
         // overwriting a single engine callback.
@@ -47,8 +79,8 @@ struct ChannelRowView: View {
             NotificationCenter.default.publisher(for: .skewBeatEphemeralStep)
         ) { note in
             guard
-                let id = note.userInfo?["channelID"] as? UUID,
-                id == channel.id,
+                let id   = note.userInfo?["channelID"] as? UUID,
+                id       == channel.id,
                 let step = note.userInfo?["step"] as? Int
             else { return }
             withAnimation(.spring(response: 0.08, dampingFraction: 0.5)) {
@@ -81,7 +113,7 @@ struct ChannelRowView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .onTapGesture {
-                        nameText = channel.name
+                        nameText    = channel.name
                         isEditingName = true
                     }
             }
@@ -102,9 +134,9 @@ struct ChannelRowView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 4) {
                 ForEach(0..<channel.length, id: \.self) { i in
-                    let isActive = i < channel.steps.count && channel.steps[i]
-                    let isPlayhead = channel.currentStep == i && engine.sequencer.isPlaying
-                    let isFlashing = flashingStep == i
+                    let isActive    = i < channel.steps.count && channel.steps[i]
+                    let isPlayhead  = channel.currentStep == i && engine.sequencer.isPlaying
+                    let isFlashing  = flashingStep == i
 
                     StepButtonView(
                         isActive: isActive,
@@ -157,7 +189,7 @@ struct ChannelRowView: View {
         .foregroundStyle(.white.opacity(0.6))
     }
 
-    // MARK: - Controls Disclosure Button
+    // MARK: - Controls Button
 
     private var controlsButton: some View {
         Button {
@@ -170,7 +202,86 @@ struct ChannelRowView: View {
         }
     }
 
-    // MARK: - Controls Sheet
+    // MARK: - Prob Panel Header
+    //
+    // Always visible bar below the step row. Contains Trig% and Add% compact
+    // sliders (moved here from the controls sheet) plus the chevron toggle for
+    // the CC knob panel.
+
+    private var probPanelHeader: some View {
+        HStack(spacing: 10) {
+            probSlider(
+                label: "Trig",
+                value: Binding(
+                    get: { channel.trigProb },
+                    set: { v in engine.updateChannel(index: channelIndex) { $0.trigProb = v } }
+                )
+            )
+
+            probSlider(
+                label: "Add",
+                value: Binding(
+                    get: { channel.addProb },
+                    set: { v in engine.updateChannel(index: channelIndex) { $0.addProb = v } }
+                )
+            )
+
+            Button {
+                isKnobPanelExpanded.toggle()
+            } label: {
+                HStack(spacing: 2) {
+                    Text("knobs")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                    Image(systemName: isKnobPanelExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .frame(width: 58, height: 28)
+                .contentShape(Rectangle())
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Color(white: 0.06))
+    }
+
+    private func probSlider(label: String,
+                            value: Binding<Double>) -> some View {
+        HStack(spacing: 6) {
+            Text("\(label) \(Int(value.wrappedValue * 100))%")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 62, alignment: .leading)
+            Slider(value: value, in: 0...1)
+        }
+    }
+
+    // MARK: - Knob Scroll View
+
+    private var knobScrollView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                ForEach(channel.knobs.indices, id: \.self) { i in
+                    CCKnobView(
+                        knob: channel.knobs[i],
+                        channelMIDIChannel: channel.midiChannel,
+                        onUpdate: { updated in
+                            engine.updateChannel(index: channelIndex) { ch in
+                                guard ch.knobs.indices.contains(i) else { return }
+                                ch.knobs[i] = updated
+                            }
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+        }
+        .background(Color(white: 0.06))
+    }
+
+    // MARK: - Controls Sheet (MIDI only — prob controls moved to panel header)
 
     private var controlsSheet: some View {
         NavigationStack {
@@ -204,34 +315,6 @@ struct ChannelRowView: View {
                         .pickerStyle(.menu)
                     }
                 }
-
-                Section("Probability") {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Trig  \(Int(channel.trigProb * 100))%")
-                            .font(.subheadline)
-                        Slider(
-                            value: Binding(
-                                get: { channel.trigProb },
-                                set: { v in engine.updateChannel(index: channelIndex) { $0.trigProb = v } }
-                            ),
-                            in: 0...1
-                        )
-                    }
-                    .padding(.vertical, 4)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Add  \(Int(channel.addProb * 100))%")
-                            .font(.subheadline)
-                        Slider(
-                            value: Binding(
-                                get: { channel.addProb },
-                                set: { v in engine.updateChannel(index: channelIndex) { $0.addProb = v } }
-                            ),
-                            in: 0...1
-                        )
-                    }
-                    .padding(.vertical, 4)
-                }
             }
             .navigationTitle(channel.name.isEmpty ? "Channel \(channelIndex + 1)" : channel.name)
             .toolbar {
@@ -254,7 +337,7 @@ struct ChannelRowView: View {
 // MARK: - StepButtonView
 
 private struct StepButtonView: View {
-    let isActive: Bool
+    let isActive:   Bool
     let isPlayhead: Bool
     let isFlashing: Bool
 
