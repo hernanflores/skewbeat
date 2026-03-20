@@ -98,6 +98,13 @@ final class MIDIManager {
         }
     }
 
+    func sendCC(cc: Int, value: Int, channel: Int, to endpoint: MIDIEndpointRef) {
+        let status = UInt8(0xB0 | (channel - 1) & 0x0F)
+        let data: [UInt8] = [status, UInt8(clamping: cc), UInt8(clamping: value)]
+        send(bytes: data, to: endpoint)
+        print("[MIDIManager] CC      ch=\(channel) cc=\(cc) val=\(value)")
+    }
+
     func sendNoteOff(note: Int, channel: Int, to endpoint: MIDIEndpointRef) {
         let status  = UInt8(0x80 | (channel - 1) & 0x0F)
         let data: [UInt8] = [status, UInt8(clamping: note), 0x00]
