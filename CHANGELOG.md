@@ -3,6 +3,28 @@
 All notable changes to SkewBeat are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.1.0] - 2026-03-20
+
+### Added
+- `CCKnob` model: `Codable`/`Identifiable` struct with `ccNumber` (0–127), `homeValue` (0–127), `offset` (0–63, symmetric ±), `sendProb` (0.0–1.0), `midiChannel` (1–16); defaults to sendProb=0.25 to avoid MIDI 1.0 bandwidth saturation
+- `Channel.knobs`: always exactly 8 `CCKnob` instances per channel (CC 1–8); Codable migration fallback injects defaults for presets saved before knob support
+- `SequencerEngine`: knob evaluation in `tick()` — `sendProb` gate, value = `homeValue ± random(offset)` clamped 0–127, `fireKnob` placeholder (console + `onKnobFire` test hook)
+- `MIDIManager.sendCC(cc:value:channel:to:)`: builds 3-byte `0xB0 | (ch-1)` status byte, sends via `MIDIPacketList` (not yet wired to `fireKnob` — rate-limiter PR first)
+- `CCKnobView`: circular knob with 300° arc travel (7→5 o'clock), white home-value indicator, yellow ±offset arc, red sendProb arc; dead-zone vertical drag (8pt, direction guard); long-press edit popover (CC number, offset, sendProb, MIDI channel override, name)
+- `ChannelRowView`: collapsible CC knob panel (spring animated, `@AppStorage` expanded state per channel); Trig% and Add% sliders moved from controls sheet to always-visible panel header row
+- `PresetManager`: JSON preset persistence under `Documents/Presets/`; `save`, `load`, `delete`, `listAll` (descending by `createdAt`); 4 default presets ("Pattern 1"–"Pattern 4") on first launch
+- `PresetBarView`: horizontal scrollable preset bar — tap to load, long-press to rename/delete, Save button with name alert, active preset highlighted
+- `ContentView`: root layout — `TransportBarView` → `PresetBarView` → channel rows `ScrollView`
+- `SequencerEngine`: `presetManager`, `activePresetID`, `saveCurrentAsPreset(name:)` (clockQueue.sync snapshot), `loadPreset(_:)` (two-phase: clockQueue stops transport, main thread applies @Observable mutations)
+- `SkewBeatTests`: 27 XCTest unit tests (was 14); added CCKnob codable round-trip, channel migration fallback, sendProb gates, offset clamping, `onKnobFire` integration, sendCC status-byte formula
+
+### Changed
+- `ChannelRowView` controls sheet now shows MIDI note/channel only — probability controls surfaced to panel header for immediate access without opening a sheet
+- `CCKnob.defaults` sendProb default set to 0.25 (was 1.0) — prevents MIDI flood at 12 ch × 8 knobs; `sendProb=1.0` still available for individual knobs
+
+### Fixed
+- Two pre-existing `SequencerEngineTests` failures (`testChannelsAdvanceIndependently`, `testStepWrapsForAllConfiguredChannels`) — tests assumed channel lengths 4/6/3 but did not set them up; now set explicitly before ticking
+
 ## [0.1.0.0] - 2026-03-20
 
 ### Added

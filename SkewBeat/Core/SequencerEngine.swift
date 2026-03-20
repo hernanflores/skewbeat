@@ -17,15 +17,25 @@ final class SequencerEngine {
 
     private(set) var sequencer: Sequencer = Sequencer()
     private(set) var midiManager: MIDIManager = MIDIManager()
+    private(set) var presetManager: PresetManager = PresetManager()
 
     /// Per-channel step counters — internal so tests can inspect and drive them.
     var currentSteps: [Int]
+
+    /// ID of the last preset that was loaded or saved. Nil until the first preset interaction.
+    private(set) var activePresetID: UUID?
 
     // MARK: - Callbacks
 
     /// Called on the main thread whenever a step fires via the Add (ephemeral) path.
     /// Also posted as `Notification.Name.skewBeatEphemeralStep` for multicast subscribers.
     var onEphemeralStep: ((UUID, Int) -> Void)?
+
+    /// Called synchronously on the clock queue whenever a CC knob fires.
+    /// Receives the knob, the calculated CC value (0–127), and the parent channel.
+    /// Primarily used for unit testing; when MIDI CC send is wired, dispatch to the
+    /// appropriate queue inside fireKnob(knob:value:channel:).
+    var onKnobFire: ((CCKnob, Int, Channel) -> Void)?
 
     // MARK: - Clock
 
@@ -42,16 +52,6 @@ final class SequencerEngine {
 
     init() {
         currentSteps = Array(repeating: 0, count: sequencer.channels.count)
-
-        // Initialise channels 0-2 with fixed patterns; rest default to 16 empty steps.
-        sequencer.channels[0].length = 4
-        sequencer.channels[0].steps = paddedSteps([true, false, true, false])
-
-        sequencer.channels[1].length = 6
-        sequencer.channels[1].steps = paddedSteps([true, false, false, true, false, false])
-
-        sequencer.channels[2].length = 3
-        sequencer.channels[2].steps = paddedSteps([true, true, true])
 
         start()
     }
@@ -107,6 +107,61 @@ final class SequencerEngine {
         clockQueue.async { [weak self] in
             guard let self, self.sequencer.channels.indices.contains(index) else { return }
             mutation(&self.sequencer.channels[index])
+        }
+    }
+
+    // MARK: - Public API — Presets
+
+    /// Encodes the current sequencer state and writes it to disk as a new preset.
+    ///
+    /// Called from the main thread. Uses clockQueue.sync to capture a consistent snapshot
+    /// (no tick() can run concurrently during encoding). Safe from deadlock because
+    /// clockQueue only dispatches to main via async, never sync.
+    @discardableResult
+    func saveCurrentAsPreset(name: String) -> Preset {
+        var preset: Preset!
+        clockQueue.sync {
+            preset = self.presetManager.save(sequencer: self.sequencer, name: name)
+        }
+        activePresetID = preset.id   // update on the calling (main) thread
+        return preset
+    }
+
+    /// Stops transport, loads the preset's sequencer state from disk, and leaves transport stopped.
+    ///
+    /// Sequence of operations:
+    ///   1. clockQueue: cancel timer, mark isPlaying=false, reset tickCount + step counters
+    ///   2. main: apply channel/bpm/swing data to @Observable Sequencer (triggers SwiftUI updates)
+    ///
+    /// By resetting currentSteps on clockQueue before the main-thread apply, no in-flight tick()
+    /// can read a stale step index for the new channel layout.
+    func loadPreset(_ preset: Preset) {
+        clockQueue.async { [weak self] in
+            guard let self else { return }
+
+            // 1. Stop transport atomically on the clock queue.
+            self.sequencer.isPlaying = false
+            self.cancelTimer()
+            self.tickCount = 0
+
+            // 2. Decode the preset's sequencer snapshot from disk.
+            let loaded = self.presetManager.load(preset)
+
+            // 3. Reset step counters while holding the clock queue
+            //    (guarantees no tick reads them between steps 1 and 4).
+            self.currentSteps = Array(repeating: 0, count: loaded.channels.count)
+
+            let presetID = preset.id
+
+            // 4. Push observable mutations to the main thread so SwiftUI reacts correctly.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.sequencer.channels = loaded.channels
+                self.sequencer.bpm = loaded.bpm
+                self.sequencer.swing = loaded.swing
+                self.sequencer.isPlaying = false   // confirm stopped on @Observable side
+                self.activePresetID = presetID
+            }
         }
     }
 
@@ -175,6 +230,16 @@ final class SequencerEngine {
 
             evaluateStep(channel: channel, step: step)
 
+            // CC knobs: fire unconditionally on every tick (independent of step state).
+            // sendProb gates each knob; value is homeValue ± offset, clamped 0–127.
+            for knob in channel.knobs {
+                guard Double.random(in: 0...1) < knob.sendProb else { continue }
+                let safeOffset = max(0, knob.offset)
+                let delta = safeOffset > 0 ? Int.random(in: -safeOffset...safeOffset) : 0
+                let value = min(127, max(0, knob.homeValue + delta))
+                fireKnob(knob: knob, value: value, channel: channel)
+            }
+
             // Each channel advances independently, wrapping at its own length.
             currentSteps[index] = (step + 1) % max(1, channel.length)
 
@@ -214,6 +279,16 @@ final class SequencerEngine {
     }
 
     // MARK: - Firing
+
+    private func fireKnob(knob: CCKnob, value: Int, channel: Channel) {
+        #if DEBUG
+        print("[\(channel.name)] CC \(knob.ccNumber) = \(value)")
+        #endif
+        // Placeholder: when MIDI CC send is implemented, send here.
+        // onKnobFire is called synchronously on the clock queue (or test thread).
+        // TODO: dispatch appropriately when wired to MIDIManager.sendCC().
+        onKnobFire?(knob, value, channel)
+    }
 
     private func fireStep(channel: Channel, step: Int, isEphemeral: Bool) {
         #if DEBUG

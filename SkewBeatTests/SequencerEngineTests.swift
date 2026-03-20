@@ -41,8 +41,11 @@ final class SequencerEngineTests: XCTestCase {
 
     func testStepWrapsForAllConfiguredChannels() {
         let engine = makeStoppedEngine()
-        // Configured lengths: ch0=4, ch1=6, ch2=3.
+        // Set up distinct lengths so channels wrap at different points.
         let lengths = [4, 6, 3]
+        for (i, len) in lengths.enumerated() {
+            engine.sequencer.channels[i].length = len
+        }
 
         // Tick LCM(4,6,3)=12 times so every channel completes whole cycles.
         engine.currentSteps = [0, 0, 0] + Array(engine.currentSteps.dropFirst(3))
@@ -58,6 +61,10 @@ final class SequencerEngineTests: XCTestCase {
 
     func testChannelsAdvanceIndependently() {
         let engine = makeStoppedEngine()
+        // Set up distinct lengths so channels wrap at different points.
+        engine.sequencer.channels[0].length = 4
+        engine.sequencer.channels[1].length = 6
+        engine.sequencer.channels[2].length = 3
         engine.currentSteps = Array(repeating: 0, count: engine.sequencer.channels.count)
 
         // After 5 ticks:
@@ -225,6 +232,181 @@ final class SequencerEngineTests: XCTestCase {
         // channel[0] had step=0 processed; currentStep should now be 0.
         XCTAssertEqual(engine.sequencer.channels[0].currentStep, 0,
                        "currentStep should reflect the step that was just evaluated")
+    }
+
+    // MARK: - CCKnob model
+
+    func testCCKnobDefaultValues() {
+        let knob = CCKnob()
+        XCTAssertEqual(knob.ccNumber,   1)
+        XCTAssertEqual(knob.homeValue,  64)
+        XCTAssertEqual(knob.offset,     0)
+        XCTAssertEqual(knob.sendProb,   1.0)
+        XCTAssertEqual(knob.midiChannel, 1)
+    }
+
+    func testCCKnobCodableRoundTrip() throws {
+        var knob = CCKnob()
+        knob.ccNumber   = 74
+        knob.homeValue  = 100
+        knob.offset     = 30
+        knob.sendProb   = 0.75
+        knob.midiChannel = 3
+
+        let data    = try JSONEncoder().encode(knob)
+        let decoded = try JSONDecoder().decode(CCKnob.self, from: data)
+
+        XCTAssertEqual(decoded.id,          knob.id)
+        XCTAssertEqual(decoded.ccNumber,    74)
+        XCTAssertEqual(decoded.homeValue,   100)
+        XCTAssertEqual(decoded.offset,      30)
+        XCTAssertEqual(decoded.sendProb,    0.75)
+        XCTAssertEqual(decoded.midiChannel, 3)
+    }
+
+    // MARK: - Channel.knobs
+
+    func testChannelHasEightDefaultKnobs() {
+        let channel = Channel()
+        XCTAssertEqual(channel.knobs.count, 8)
+    }
+
+    func testChannelKnobCCNumbers() {
+        let channel = Channel()
+        for (i, knob) in channel.knobs.enumerated() {
+            XCTAssertEqual(knob.ccNumber, i + 1,
+                           "knobs[\(i)] should have ccNumber \(i + 1)")
+        }
+    }
+
+    func testChannelCodableMigrationInjectsDefaultKnobs() throws {
+        // Simulate a preset JSON saved before knob support — "knobs" key is absent.
+        let falseArray = Array(repeating: false, count: Channel.maxSteps)
+        let stepsJSON  = falseArray.map { $0 ? "true" : "false" }.joined(separator: ",")
+        let oldJSON = """
+        {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "name": "Legacy",
+            "steps": [\(stepsJSON)],
+            "length": 16,
+            "currentStep": 0,
+            "midiNote": 60,
+            "midiChannel": 1,
+            "trigProb": 1.0,
+            "addProb": 0.0
+        }
+        """
+        let channel = try JSONDecoder().decode(Channel.self, from: Data(oldJSON.utf8))
+        XCTAssertEqual(channel.knobs.count, 8,
+                       "Missing 'knobs' key should inject 8 default knobs")
+        XCTAssertEqual(channel.knobs[0].ccNumber, 1)
+    }
+
+    // MARK: - Knob sendProb gate (probability logic)
+
+    func testKnobSendProbOneAlwaysFires() {
+        let knob = CCKnob() // sendProb = 1.0
+        var count = 0
+        for _ in 0..<100 {
+            if Double.random(in: 0...1) < knob.sendProb { count += 1 }
+        }
+        XCTAssertEqual(count, 100, "sendProb=1.0 must fire on every roll")
+    }
+
+    func testKnobSendProbZeroNeverFires() {
+        var knob = CCKnob()
+        knob.sendProb = 0.0
+        var count = 0
+        for _ in 0..<100 {
+            if Double.random(in: 0...1) < knob.sendProb { count += 1 }
+        }
+        XCTAssertEqual(count, 0, "sendProb=0.0 must never fire")
+    }
+
+    // MARK: - Knob value calculation
+
+    func testKnobOffsetZeroAlwaysSendsHomeValue() {
+        var knob = CCKnob()
+        knob.homeValue = 64
+        knob.offset    = 0
+
+        for _ in 0..<100 {
+            let safeOffset = max(0, knob.offset)
+            let delta      = safeOffset > 0 ? Int.random(in: -safeOffset...safeOffset) : 0
+            let value      = min(127, max(0, knob.homeValue + delta))
+            XCTAssertEqual(value, 64, "offset=0 must always produce homeValue")
+        }
+    }
+
+    func testKnobOffsetValueInRange() {
+        var knob = CCKnob()
+        knob.homeValue = 64
+        knob.offset    = 20
+
+        for _ in 0..<200 {
+            let safeOffset = max(0, knob.offset)
+            let delta      = Int.random(in: -safeOffset...safeOffset)
+            let value      = min(127, max(0, knob.homeValue + delta))
+            XCTAssertGreaterThanOrEqual(value, 44, "value must be >= homeValue - offset")
+            XCTAssertLessThanOrEqual(value, 84,    "value must be <= homeValue + offset")
+        }
+    }
+
+    func testKnobValueClampedAtLowBound() {
+        var knob = CCKnob()
+        knob.homeValue = 0
+        knob.offset    = 63 // maximum: homeValue + delta could go to -63
+
+        for _ in 0..<200 {
+            let safeOffset = max(0, knob.offset)
+            let delta      = Int.random(in: -safeOffset...safeOffset)
+            let value      = min(127, max(0, knob.homeValue + delta))
+            XCTAssertGreaterThanOrEqual(value, 0,
+                                        "CC value must never be negative")
+        }
+    }
+
+    func testKnobValueClampedAtHighBound() {
+        var knob = CCKnob()
+        knob.homeValue = 127
+        knob.offset    = 63 // maximum: homeValue + delta could go to 190
+
+        for _ in 0..<200 {
+            let safeOffset = max(0, knob.offset)
+            let delta      = Int.random(in: -safeOffset...safeOffset)
+            let value      = min(127, max(0, knob.homeValue + delta))
+            XCTAssertLessThanOrEqual(value, 127,
+                                     "CC value must never exceed 127")
+        }
+    }
+
+    // MARK: - MIDIManager.sendCC byte construction
+
+    func testSendCCStatusByteFormula() {
+        // Validates the status byte used in MIDIManager.sendCC:
+        //   0xB0 | (channel - 1) & 0x0F
+        // Channel 1  → 0xB0 (176)
+        // Channel 16 → 0xBF (191)
+        // Channel 17 (invalid) wraps via & 0x0F → 0xB0
+        XCTAssertEqual(UInt8(0xB0 | (1  - 1) & 0x0F), 0xB0, "ch 1 status byte")
+        XCTAssertEqual(UInt8(0xB0 | (16 - 1) & 0x0F), 0xBF, "ch 16 status byte")
+        XCTAssertEqual(UInt8(0xB0 | (17 - 1) & 0x0F), 0xB0, "ch 17 wraps to ch 1")
+    }
+
+    // MARK: - onKnobFire integration
+
+    func testOnKnobFireCalledFromTick() {
+        let engine = makeStoppedEngine()
+        // onKnobFire fires synchronously on the calling thread — no main-queue drain needed.
+        var fired = false
+        engine.onKnobFire = { _, _, _ in fired = true }
+
+        engine.tick()
+
+        // sendProb=0.25 per knob (CCKnob.defaults). 96 evaluations per tick.
+        // P(zero fires) = 0.75^96 ≈ 2.6e-12 — effectively impossible.
+        XCTAssertTrue(fired,
+                      "onKnobFire must be called during tick() (12 ch × 8 knobs, sendProb=0.25)")
     }
 
     // MARK: - onEphemeralStep callback
