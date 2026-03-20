@@ -2,9 +2,13 @@ import Foundation
 import Observation
 
 struct Channel: Codable, Identifiable {
+    /// Maximum number of steps a channel can hold. Shared constant across engine and UI.
+    static let maxSteps = 32
+
     var id: UUID = UUID()
     var name: String = ""
-    var steps: [Bool] = Array(repeating: false, count: 16)
+    /// Always `maxSteps` elements; `length` controls how many are active (display window).
+    var steps: [Bool] = Array(repeating: false, count: Channel.maxSteps)
     var length: Int = 16
     var currentStep: Int = 0
     var midiNote: Int = 60
