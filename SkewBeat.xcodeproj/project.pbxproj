@@ -7,27 +7,53 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5FD52B842F6CDD5D00862609 /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD52B832F6CDD5D00862609 /* MIDIManager.swift */; };
 		BB0000000000000000000012 /* SkewBeatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000009 /* SkewBeatApp.swift */; };
 		BB0000000000000000000013 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000A /* Models.swift */; };
 		BB0000000000000000000014 /* SequencerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000B /* SequencerEngine.swift */; };
 		BB0000000000000000000015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000C /* Assets.xcassets */; };
 		BB0000000000000000000016 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000E /* Preview Assets.xcassets */; };
+		BB000000000000000000001E /* SequencerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000001D /* SequencerEngineTests.swift */; };
+		BB0000000000000000000028 /* ChannelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000029 /* ChannelRowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5FD52B832F6CDD5D00862609 /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
 		BB0000000000000000000008 /* SkewBeat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SkewBeat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0000000000000000000009 /* SkewBeatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkewBeatApp.swift; sourceTree = "<group>"; };
 		BB000000000000000000000A /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		BB000000000000000000000B /* SequencerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequencerEngine.swift; sourceTree = "<group>"; };
 		BB000000000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BB000000000000000000000E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		BB000000000000000000001D /* SequencerEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequencerEngineTests.swift; sourceTree = "<group>"; };
+		BB0000000000000000000029 /* ChannelRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelRowView.swift; sourceTree = "<group>"; };
+		BB0000000000000000000022 /* SkewBeatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SkewBeatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		BB0000000000000000000026 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BB0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BB000000000000000000000F;
+			remoteInfo = SkewBeat;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		BB0000000000000000000027 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BB000000000000000000000F /* SkewBeat */;
+			targetProxy = BB0000000000000000000026 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXGroup section */
 		BB0000000000000000000002 = {
 			isa = PBXGroup;
 			children = (
 				BB0000000000000000000003 /* SkewBeat */,
+				BB000000000000000000001F /* SkewBeatTests */,
 				BB0000000000000000000007 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -57,6 +83,7 @@
 		BB0000000000000000000005 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				BB0000000000000000000029 /* ChannelRowView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -64,14 +91,24 @@
 		BB0000000000000000000006 /* MIDI */ = {
 			isa = PBXGroup;
 			children = (
+				5FD52B832F6CDD5D00862609 /* MIDIManager.swift */,
 			);
 			path = MIDI;
+			sourceTree = "<group>";
+		};
+		BB000000000000000000001F /* SkewBeatTests */ = {
+			isa = PBXGroup;
+			children = (
+				BB000000000000000000001D /* SequencerEngineTests.swift */,
+			);
+			path = SkewBeatTests;
 			sourceTree = "<group>";
 		};
 		BB0000000000000000000007 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				BB0000000000000000000008 /* SkewBeat.app */,
+				BB0000000000000000000022 /* SkewBeatTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,6 +140,22 @@
 			productReference = BB0000000000000000000008 /* SkewBeat.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BB0000000000000000000021 /* SkewBeatTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB0000000000000000000025 /* Build configuration list for PBXNativeTarget "SkewBeatTests" */;
+			buildPhases = (
+				BB0000000000000000000020 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB0000000000000000000027 /* PBXTargetDependency */,
+			);
+			name = SkewBeatTests;
+			productName = SkewBeatTests;
+			productReference = BB0000000000000000000022 /* SkewBeatTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -115,6 +168,10 @@
 				TargetAttributes = {
 					BB000000000000000000000F = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					BB0000000000000000000021 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = BB000000000000000000000F;
 					};
 				};
 			};
@@ -132,6 +189,7 @@
 			projectRoot = "";
 			targets = (
 				BB000000000000000000000F /* SkewBeat */,
+				BB0000000000000000000021 /* SkewBeatTests */,
 			);
 		};
 /* End PBXProject section */
@@ -155,7 +213,17 @@
 			files = (
 				BB0000000000000000000012 /* SkewBeatApp.swift in Sources */,
 				BB0000000000000000000013 /* Models.swift in Sources */,
+				5FD52B842F6CDD5D00862609 /* MIDIManager.swift in Sources */,
 				BB0000000000000000000014 /* SequencerEngine.swift in Sources */,
+				BB0000000000000000000028 /* ChannelRowView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000000000000000000020 /* Sources (SkewBeatTests) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000001E /* SequencerEngineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +238,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMIDIUsageDescription = "SkewBeat needs MIDI access to send messages to your devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -179,7 +248,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.skewbeat.SkewBeat";
+				PRODUCT_BUNDLE_IDENTIFIER = com.skewbeat.SkewBeat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -199,6 +268,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMIDIUsageDescription = "SkewBeat needs MIDI access to send messages to your devices";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -208,7 +278,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.skewbeat.SkewBeat";
+				PRODUCT_BUNDLE_IDENTIFIER = com.skewbeat.SkewBeat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -335,6 +405,41 @@
 			};
 			name = Release;
 		};
+		BB0000000000000000000023 /* Debug (SkewBeatTests) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skewbeat.SkewBeatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SkewBeat.app/Contents/MacOS/SkewBeat";
+			};
+			name = Debug;
+		};
+		BB0000000000000000000024 /* Release (SkewBeatTests) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skewbeat.SkewBeatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SkewBeat.app/Contents/MacOS/SkewBeat";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -352,6 +457,15 @@
 			buildConfigurations = (
 				BB0000000000000000000019 /* Debug */,
 				BB000000000000000000001A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB0000000000000000000025 /* Build configuration list for PBXNativeTarget "SkewBeatTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000000000000000000023 /* Debug */,
+				BB0000000000000000000024 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
