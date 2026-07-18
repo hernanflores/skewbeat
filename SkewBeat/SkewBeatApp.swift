@@ -4,6 +4,7 @@ import SwiftUI
 struct SkewBeatApp: App {
     var body: some Scene {
         WindowGroup {
+            ContentView()
         }
     }
 }

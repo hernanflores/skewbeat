@@ -15,6 +15,10 @@
 		BB0000000000000000000016 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000E /* Preview Assets.xcassets */; };
 		BB000000000000000000001E /* SequencerEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000001D /* SequencerEngineTests.swift */; };
 		BB0000000000000000000028 /* ChannelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000029 /* ChannelRowView.swift */; };
+		BB000000000000000000002B /* PresetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000002A /* PresetManager.swift */; };
+		BB000000000000000000002D /* PresetBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000002C /* PresetBarView.swift */; };
+		BB000000000000000000002F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000002E /* ContentView.swift */; };
+		BB0000000000000000000031 /* CCKnobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000030 /* CCKnobView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +31,10 @@
 		BB000000000000000000000E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		BB000000000000000000001D /* SequencerEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SequencerEngineTests.swift; sourceTree = "<group>"; };
 		BB0000000000000000000029 /* ChannelRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelRowView.swift; sourceTree = "<group>"; };
+		BB000000000000000000002A /* PresetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManager.swift; sourceTree = "<group>"; };
+		BB000000000000000000002C /* PresetBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetBarView.swift; sourceTree = "<group>"; };
+		BB000000000000000000002E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BB0000000000000000000030 /* CCKnobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CCKnobView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000022 /* SkewBeatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SkewBeatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -76,6 +84,7 @@
 			children = (
 				BB000000000000000000000A /* Models.swift */,
 				BB000000000000000000000B /* SequencerEngine.swift */,
+				BB000000000000000000002A /* PresetManager.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -84,6 +93,9 @@
 			isa = PBXGroup;
 			children = (
 				BB0000000000000000000029 /* ChannelRowView.swift */,
+				BB0000000000000000000030 /* CCKnobView.swift */,
+				BB000000000000000000002C /* PresetBarView.swift */,
+				BB000000000000000000002E /* ContentView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -216,6 +228,10 @@
 				5FD52B842F6CDD5D00862609 /* MIDIManager.swift in Sources */,
 				BB0000000000000000000014 /* SequencerEngine.swift in Sources */,
 				BB0000000000000000000028 /* ChannelRowView.swift in Sources */,
+				BB0000000000000000000031 /* CCKnobView.swift in Sources */,
+				BB000000000000000000002B /* PresetManager.swift in Sources */,
+				BB000000000000000000002D /* PresetBarView.swift in Sources */,
+				BB000000000000000000002F /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

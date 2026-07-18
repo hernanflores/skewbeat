@@ -16,6 +16,20 @@
 
 ---
 
+### CC Rate-Limiting for MIDI Wire-Up
+
+**Priority:** P2
+
+**What:** Add per-channel CC rate limiting or a configurable 'knob resolution' setting before wiring `fireKnob` to real MIDI CC sends.
+
+**Why:** 12 channels × 8 knobs at 120 BPM = up to 768 CC messages/second ≈ 74% of MIDI 1.0 bandwidth (31.25 kbaud, 3 bytes/CC). Will cause jitter and dropped notes on hardware synths.
+
+**Context:** `fireKnob` in `SequencerEngine.swift` is intentionally a placeholder (console print + `onKnobFire` test callback). `MIDIManager.sendCC()` exists and is unit-tested, but **do not wire `fireKnob` → `sendCC` until this rate-limiter is in place**. Options: per-knob minimum interval tracked in a `[UUID: Date]` dict on clockQueue, a global CC resolution divider (e.g. fire every N ticks), or reducing `CCKnob.defaults.sendProb` further. Default `sendProb` was reduced to 0.25 in the CC knob PR as a partial mitigation.
+
+**Depends on:** CC knob model + `sendCC` method (completed in cc-knob PR).
+
+---
+
 ### Migrate MIDIPacketList → MIDIEventList
 
 **Priority:** P2
